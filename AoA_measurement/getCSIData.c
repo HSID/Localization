@@ -14,6 +14,19 @@
  *   Copyright (c)  LION group @ Shanghai Jiao Tong University
  * =====================================================================================
  */
+
+ /*
+  * MATLAB usage description
+  * function csiData = getCSIData([outputFileName])
+  *   INPUTS:
+  *     outputFileName -- a string
+  *
+  *   OUTPUTS:
+  *     csiData        -- a matlab struct contains the CSI matrix
+  *
+  *   Calling the function without giving the outputFileName will turn off logging.
+  *   returning an integer value indicates errors.
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
