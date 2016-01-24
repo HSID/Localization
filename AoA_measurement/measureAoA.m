@@ -6,7 +6,14 @@ while true
   nr = csiData.nr;
   nc = csiData.nc;
   num_tones = csiData.num_tones;
-  howManyTxToUse = nc; % you can set this variable to limit the number of data from different tx antennas
+
+  % check the correctness of the data
+  csiMatrixSize = size(csiMatrix);
+  if ~all(csiMatrixSize)
+    continue;
+  end
+
+  howManyTxToUse = NUM_OF_TX_ANTENNAS_TO_USE; % you can set this variable to limit the number of data from different tx antennas
   pdpMatrix = [];
   for i = 1:nr
     for j = 1:howManyTxToUse
