@@ -1,5 +1,11 @@
 configFile;
 figure;
+
+% sampleData = getCSIData;
+% fieldNames = fieldnames(sampleData);
+
+LOG_DATA = {};
+
 while true
   csiData = getCSIData;
   csiMatrix = csiData.csi_matrix;
@@ -8,7 +14,7 @@ while true
   num_tones = csiData.num_tones;
 
   % check the correctness of the data
-  csiMatrixSize = size(csiMatrix);
+  csiMatrixSize = [nr, nc, num_tones];
   if ~all(csiMatrixSize)
     continue;
   end
@@ -37,5 +43,13 @@ while true
   end
   if err ~= 0
     return;
+  end
+
+  if length(LOG_PARA)
+    csiData.ntxused = howManyTxToUse;
+    csiData.pseudoSpectrum = pseudoSpectrum;
+    csiData.freq = freq;
+    csiData.maximaLocs = plotData.localMaximasLocations;
+    LOG_DATA = [LOG_DATA, csiData];
   end
 end
