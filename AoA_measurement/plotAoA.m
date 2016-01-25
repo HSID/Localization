@@ -58,6 +58,11 @@ radius = plotRadius;
 
 [localMaximas, maximaLocs] = findpeaks(data);
 
+% deal with the non-localmaxima condition
+if isempty(maximaLocs)
+  maximaLocs = 1;
+end
+
 angles = linspace(range(1), range(2), length)' / 180 * pi;
 dataRadii = data / max(data) * plotRadius * radiusScale;
 
