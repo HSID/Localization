@@ -35,7 +35,7 @@ while true
     [pseudoSpectrum, freq] = pmusic(pdpMatrix', 1);
 
     dataAoA.data = pseudoSpectrum;
-    dataAoA.range = [0 360];
+    dataAoA.range = [0 180];
     dataAoA.length = length(pseudoSpectrum);
 
     [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE);
