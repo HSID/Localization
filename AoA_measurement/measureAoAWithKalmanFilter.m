@@ -1,9 +1,11 @@
 function LOG_DATA = measureAoAWithKalmanFilter(configFileName, varargin)
 % function LOG_DATA = measureAoA(configFileName, varargin)
-%   INPUT:  configFileName -- type of string
-%           ['Kalman']     -- indicating using the Kalman filtering
-%           [mfileName]    -- indicating using mfile as input. Offline processing.
-%   OUTPUT: LOG_DATA       -- type of cell. The data structure to save the log data.
+%   INPUT:  configFileName                  -- type of string
+%           ['KalmanFilter']                      -- indicating using the Kalman filtering
+%           ['ExponentialMovingAverage']    -- indicating using the exponential moving average
+%           [weight]                        -- type of float. The weight for exponential moving average.
+%           [mfileName]                     -- indicating using mfile as input. Offline processing.
+%   OUTPUT: LOG_DATA                        -- type of cell. The data structure to save the log data.
 %               structure of LOG_DATA:
 %                   channel: 2437
 %                    chanBW: 0
@@ -25,14 +27,21 @@ function LOG_DATA = measureAoAWithKalmanFilter(configFileName, varargin)
 
 % read varargin
 KalmanFlag = false;
+ExponentialMovingAverageFlag = false;
 inputFlag = false;
 for i = 1:length(varargin)
     if ischar(varargin{i}) 
-        if varargin{i} == 'Kalman'
+        if strcmp(varargin{i}, 'KalmanFilter');
             KalmanFlag = true;
+        else strcmp(varargin{i}, 'ExponentialMovingAverage');
+            ExponentialMovingAverageFlag = true;
         end
-    else 
-        inputIndex = 2;
+    elseif isfloat(varargin{i}) 
+        if ExponentialMovingAverageFlag
+            weightForExponentialMovingAverage = varargin{i};
+        end
+    else
+        inputIndex = 1;
         inputFlag = true;
         input = varargin{i};
     end
@@ -61,6 +70,10 @@ if KalmanFlag
     Pminus = zeros(256, 1); % a priori error estimate
     K = 0; % gain or blending factor
     %%%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%
+elseif ExponentialMovingAverageFlag
+    %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
+    prePseudoSpectrum = zeros(256, 1);
+    %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
 end
 
 while true
@@ -112,6 +125,11 @@ while true
         P = (1 - K) .* Pminus;
         pseudoSpectrum = spectrumHat;
         %%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%%%%%
+    elseif ExponentialMovingAverageFlag
+        %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
+        pseudoSpectrum = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum + weightForExponentialMovingAverage .* pseudoSpectrum;
+        prePseudoSpectrum = pseudoSpectrum;
+        %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
     end
 
     dataAoA.data = pseudoSpectrum;
