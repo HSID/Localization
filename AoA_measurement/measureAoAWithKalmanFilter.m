@@ -1,4 +1,27 @@
 function LOG_DATA = measureAoAWithKalmanFilter(configFileName, varargin)
+% function LOG_DATA = measureAoA(configFileName, varargin)
+%   INPUT:  configFileName -- type of string
+%           ['Kalman']     -- indicating using the Kalman filtering
+%           [mfileName]    -- indicating using mfile as input. Offline processing.
+%   OUTPUT: LOG_DATA       -- type of cell. The data structure to save the log data.
+%               structure of LOG_DATA:
+%                   channel: 2437
+%                    chanBW: 0
+%                      rate: 142
+%                        nr: 3
+%                        nc: 2
+%                 num_tones: 56
+%                      rssi: 51
+%                    rssi_0: 44
+%                    rssi_1: 48
+%                    rssi_2: 45
+%               payload_len: 124
+%                csi_matrix: [3x2x56 double]
+%                   ntxused: 1
+%            pseudoSpectrum: [256x1 double]
+%                      freq: [256x1 double]
+%                maximaLocs: [2x1 double]
+
 
 % read varargin
 KalmanFlag = false;
