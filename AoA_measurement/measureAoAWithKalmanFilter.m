@@ -48,6 +48,9 @@ inputFlag = false;
 % read config file
 configFile;
 
+% load the sound track
+load handel.mat
+
 % set the flags
 if strcmp(SMOOTH_METHOD, 'KalmanFilter')
     KalmanFlag = true;
@@ -86,6 +89,7 @@ if KalmanFlag
 elseif ExponentialMovingAverageFlag
     %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
     prePseudoSpectrum = zeros(256, 1);
+    prePseudoSpectrum1 = zeros(256, 1);
     %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
 end
 
@@ -125,6 +129,7 @@ while true
 
   if length(pdpMatrix)
     [pseudoSpectrum, freq] = pmusic(pdpMatrix', 1);
+    [pseudoSpectrum1, freq1] = pmusic(pdpMatrix', 2);
 
     if KalmanFlag
         %%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%%%%%
@@ -142,6 +147,9 @@ while true
         %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
         pseudoSpectrum = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum + weightForExponentialMovingAverage .* pseudoSpectrum;
         prePseudoSpectrum = pseudoSpectrum;
+
+        pseudoSpectrum1 = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum1 + weightForExponentialMovingAverage .* pseudoSpectrum1;
+        prePseudoSpectrum1 = pseudoSpectrum1;
         %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
     end
 
@@ -159,8 +167,13 @@ while true
   if length(LOG_PARA)
     csiData.ntxused = howManyTxToUse;
     csiData.pseudoSpectrum = pseudoSpectrum;
+    csiData.pseudoSpectrum1 = pseudoSpectrum1;
     csiData.freq = freq;
     csiData.maximaLocs = plotData.localMaximasLocations;
     LOG_DATA = [LOG_DATA, csiData];
+  end
+
+  if ~mod(length(LOG_DATA),200)
+    sound(y,Fs);   
   end
 end
