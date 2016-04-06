@@ -27,6 +27,12 @@
 KalmanFlag = false;
 ExponentialMovingAverageFlag = false;
 inputFlag = false;
+computeMUSICUsingPDP = false;
+computeMUSICUsingCSI = false;
+computeMUSICUsingOneChannelCSI = false;
+computeMUSICUsingSpotFi = false;
+periodicalSoundSignal = false;
+showFigure = true;
 %for i = 1:length(varargin)
 %    if ischar(varargin{i}) 
 %        if strcmp(varargin{i}, 'KalmanFilter');
@@ -61,15 +67,31 @@ end
 if READ_DATA_FROM_FILE
     inputIndex = 1;
     inputFlag = true;
-    input = load(INPUT_FILE_NAME);
+    inputStruct = load(INPUT_FILE_NAME);
+    input = inputStruct.LOG_DATA;
 end
+if strcmp(COMPUTE_MUSIC_USING, 'PDP')
+    computeMUSICUsingPDP = true;
+elseif strcmp(COMPUTE_MUSIC_USING, 'CSI')
+    computeMUSICUsingCSI = true;
+elseif strcmp(COMPUTE_MUSIC_USING, 'OneChannelCSI')
+    computeMUSICUsingOneChannelCSI = true;
+elseif strcmp(COMPUTE_MUSIC_USING, 'SpotFi')
+    computeMUSICUsingSpotFi = true;
+end
+periodicalSoundSignal = PERIODICAL_SOUND_SIGNAL;
+showFigure = SHOW_FIGURE;
 
-figure;
+if showFigure
+    figure;
+end
 
 % sampleData = getCSIData;
 % fieldNames = fieldnames(sampleData);
 
 LOG_DATA = {};
+matrixForPMUSIC = [];
+LOG_DATA_BUFF = {};
 
 if KalmanFlag
     %%%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%
@@ -94,42 +116,57 @@ elseif ExponentialMovingAverageFlag
 end
 
 while true
+  % -------- Make decision on offline/online processing
   if ~inputFlag
     csiData = getCSIData;
   elseif inputIndex <= length(input)
     csiData = input{inputIndex};
     inputIndex = inputIndex + 1;
-    pause(0.2);
+    pause(0.00000002);
   else
     break;
   end
 
+  % --------- construct matrix for MUSIC
   csiMatrix = csiData.csi_matrix;
   nr = csiData.nr;
   nc = csiData.nc;
   num_tones = csiData.num_tones;
 
-  % check the correctness of the data
+  % check the correctness of the data and drop data that is not valid
   csiMatrixSize = [nr, nc, num_tones];
   if ~all(csiMatrixSize)
     continue;
   end
 
   howManyTxToUse = NUM_OF_TX_ANTENNAS_TO_USE; % you can set this variable to limit the number of data from different tx antennas
-  pdpMatrix = [];
+  vectorForPMUSIC = [];
   for i = 1:nr
     for j = 1:howManyTxToUse
       csiChannel = reshape(csiMatrix(i, j, :), [1, num_tones]);
-      pdp = csi2pdp(csiChannel);
-      pdpMatrix = [pdpMatrix; pdp];
+      if computeMUSICUsingPDP
+          elementForPMUSIC = csi2pdp(csiChannel);
+      elseif computeMUSICUsingCSI
+          elementForPMUSIC = csiChannel;
+      elseif computeMUSICUsingOneChannelCSI
+          elementForPMUSIC = csiChannel(1);
+      end
     end
+    vectorForPMUSIC = [vectorForPMUSIC; elementForPMUSIC];
   end
+  [nR, nC] = size(matrixForPMUSIC);
+  if (~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE)
+      matrixForPMUSIC = [];
+  end
+  matrixForPMUSIC = [matrixForPMUSIC, vectorForPMUSIC];
+  [nR, nC] = size(matrixForPMUSIC);
 
   err = 0;
 
-  if length(pdpMatrix)
-    [pseudoSpectrum, freq] = pmusic(pdpMatrix', 1);
-    [pseudoSpectrum1, freq1] = pmusic(pdpMatrix', 2);
+  % -------- compute MUSIC
+  if length(matrixForPMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
+    [pseudoSpectrum, freq] = pmusic(matrixForPMUSIC', 1);
+    [pseudoSpectrum1, freq1] = pmusic(matrixForPMUSIC', 2);
 
     if KalmanFlag
         %%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%%%%%
@@ -157,8 +194,16 @@ while true
     dataAoA.range = [0 180];
     dataAoA.length = length(pseudoSpectrum);
 
-    [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE);
-    drawnow;
+    if showFigure
+        [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE);
+        drawnow;
+        localMaximasLocs = plotData.localMaximasLocations;
+    else
+        [localMaximas, localMaximasLocs] = findpeaks(dataAoA.data);
+        if isempty(localMaximasLocs)
+            localMaximasLocs = 1;
+        end
+    end
   end
   if err ~= 0
     return;
@@ -166,14 +211,30 @@ while true
 
   if length(LOG_PARA)
     csiData.ntxused = howManyTxToUse;
-    csiData.pseudoSpectrum = pseudoSpectrum;
-    csiData.pseudoSpectrum1 = pseudoSpectrum1;
-    csiData.freq = freq;
-    csiData.maximaLocs = plotData.localMaximasLocations;
-    LOG_DATA = [LOG_DATA, csiData];
+    if computeMUSICUsingOneChannelCSI
+        LOG_DATA_BUFF = [LOG_DATA_BUFF, csiData];
+        if nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE
+            for i = 1:length(LOG_DATA_BUFF)
+                LOG_DATA_BUFF{i}.pseudoSpectrum = pseudoSpectrum;
+                LOG_DATA_BUFF{i}.pseudoSpectrum1 = pseudoSpectrum1;
+                LOG_DATA_BUFF{i}.freq = freq;
+                LOG_DATA_BUFF{i}.maximaLocs = localMaximasLocs;
+            end
+            LOG_DATA = [LOG_DATA, LOGDATA_BUFF];
+            LOG_DATA_BUFF = {};
+        end
+    else
+        csiData.pseudoSpectrum = pseudoSpectrum;
+        csiData.pseudoSpectrum1 = pseudoSpectrum1;
+        csiData.freq = freq;
+        csiData.maximaLocs = localMaximasLocs;
+        LOG_DATA = [LOG_DATA, csiData];
+    end
   end
 
-  if ~mod(length(LOG_DATA),200)
-    sound(y,Fs);   
+  if periodicalSoundSignal
+    if ~mod(length(LOG_DATA),200)
+        sound(y,Fs);   
+    end
   end
 end
