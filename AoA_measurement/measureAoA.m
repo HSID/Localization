@@ -19,8 +19,8 @@
 %               payload_len: 124
 %                csi_matrix: [3x2x56 double]
 %                   ntxused: 1
-%            pseudoSpectrum: [256x1 double]
-%                      freq: [256x1 double]
+%            pseudoSpectrum: [MUSIC_SPECTRUM_LENGTHx1 double]
+%                      freq: [MUSIC_SPECTRUM_LENGTHx1 double]
 %                maximaLocs: [2x1 double]
 
 
@@ -102,16 +102,16 @@ if KalmanFlag
     pInitialGuess = 0.3; % error initial guess
     
     % initial guess
-    spectrumHat = zeros(256, 1); % a posteri estimate of spectrum
-    P = zeros(256, 1) + 0.3; % a posteri error estimate
-    spectrumHatminus = zeros(256, 1); % a priori estimate of spectrum
-    Pminus = zeros(256, 1); % a priori error estimate
+    spectrumHat = zeros(MUSIC_SPECTRUM_LENGTH, 1); % a posteri estimate of spectrum
+    P = zeros(MUSIC_SPECTRUM_LENGTH, 1) + 0.3; % a posteri error estimate
+    spectrumHatminus = zeros(MUSIC_SPECTRUM_LENGTH, 1); % a priori estimate of spectrum
+    Pminus = zeros(MUSIC_SPECTRUM_LENGTH, 1); % a priori error estimate
     K = 0; % gain or blending factor
     %%%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%
 elseif ExponentialMovingAverageFlag
     %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
-    prePseudoSpectrum = zeros(256, 1);
-    prePseudoSpectrum1 = zeros(256, 1);
+    prePseudoSpectrum = zeros(MUSIC_SPECTRUM_LENGTH, 1);
+    prePseudoSpectrum1 = zeros(MUSIC_SPECTRUM_LENGTH, 1);
     %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
 end
 
@@ -122,7 +122,7 @@ while true
   elseif inputIndex <= length(input)
     csiData = input{inputIndex};
     inputIndex = inputIndex + 1;
-    pause(0.00000002);
+    if showFigure pause(0.0001);end
   else
     break;
   end
@@ -146,7 +146,7 @@ while true
       csiChannel = reshape(csiMatrix(i, j, :), [1, num_tones]);
       if computeMUSICUsingPDP
           elementForPMUSIC = csi2pdp(csiChannel);
-      elseif computeMUSICUsingCSI
+      elseif computeMUSICUsingCSI | computeMUSICUsingSpotFi
           elementForPMUSIC = csiChannel;
       elseif computeMUSICUsingOneChannelCSI
           elementForPMUSIC = csiChannel(1);
@@ -159,14 +159,19 @@ while true
       matrixForPMUSIC = [];
   end
   matrixForPMUSIC = [matrixForPMUSIC, vectorForPMUSIC];
+  if computeMUSICUsingSpotFi
+      matrixForPMUSIC = SpotFiCSISmooth(matrixForPMUSIC);
+  end
   [nR, nC] = size(matrixForPMUSIC);
 
   err = 0;
 
   % -------- compute MUSIC
   if length(matrixForPMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
-    [pseudoSpectrum, freq] = pmusic(matrixForPMUSIC', 1);
-    [pseudoSpectrum1, freq1] = pmusic(matrixForPMUSIC', 2);
+    %[pseudoSpectrum, freq] = pmusic(matrixForPMUSIC', 1);
+    %[pseudoSpectrum1, freq1] = pmusic(matrixForPMUSIC', 1);
+    [pseudoSpectrum, freq] = computeMUSICSpectrum(matrixForPMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE);
+    %[pseudoSpectrum1, freq1] = computeMUSICSpectrum(matrixForPMUSIC, 2, SEPARATION_DISTANCE);
 
     if KalmanFlag
         %%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%%%%%
@@ -185,7 +190,7 @@ while true
         pseudoSpectrum = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum + weightForExponentialMovingAverage .* pseudoSpectrum;
         prePseudoSpectrum = pseudoSpectrum;
 
-        pseudoSpectrum1 = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum1 + weightForExponentialMovingAverage .* pseudoSpectrum1;
+        %pseudoSpectrum1 = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum1 + weightForExponentialMovingAverage .* pseudoSpectrum1;
         prePseudoSpectrum1 = pseudoSpectrum1;
         %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
     end
@@ -216,16 +221,16 @@ while true
         if nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE
             for i = 1:length(LOG_DATA_BUFF)
                 LOG_DATA_BUFF{i}.pseudoSpectrum = pseudoSpectrum;
-                LOG_DATA_BUFF{i}.pseudoSpectrum1 = pseudoSpectrum1;
+                %LOG_DATA_BUFF{i}.pseudoSpectrum1 = pseudoSpectrum1;
                 LOG_DATA_BUFF{i}.freq = freq;
                 LOG_DATA_BUFF{i}.maximaLocs = localMaximasLocs;
             end
-            LOG_DATA = [LOG_DATA, LOGDATA_BUFF];
+            LOG_DATA = [LOG_DATA, LOG_DATA_BUFF];
             LOG_DATA_BUFF = {};
         end
     else
         csiData.pseudoSpectrum = pseudoSpectrum;
-        csiData.pseudoSpectrum1 = pseudoSpectrum1;
+        %csiData.pseudoSpectrum1 = pseudoSpectrum1;
         csiData.freq = freq;
         csiData.maximaLocs = localMaximasLocs;
         LOG_DATA = [LOG_DATA, csiData];
