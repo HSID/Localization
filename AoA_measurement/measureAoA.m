@@ -203,7 +203,11 @@ while true
         drawnow;
         localMaximasLocs = plotData.localMaximasLocations;
     else
-        [localMaximas, localMaximasLocs] = findpeaks(dataAoA.data);
+        if computeMUSICUsingSpotFi
+            localMaximasLocs = findLocalMaximaIn2DMatrix(dataAoA.data);
+        else
+            [localMaximas, localMaximasLocs] = findpeaks(dataAoA.data);
+        end
         if isempty(localMaximasLocs)
             localMaximasLocs = 1;
         end
