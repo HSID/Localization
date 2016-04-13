@@ -1,13 +1,15 @@
-function smoothedCSIMatrix = SpotFiCSISmooth(originalCSIMatrix)
+function smoothedCSIMatrix = SpotFiCSISmooth(originalCSIMatrix, nAntennaSensors, nChannelSensors)
 [nR, nC] = size(originalCSIMatrix);
-subMatrix1 = zeros(nC/2, nC/2 + 1);
-subMatrix2 = zeros(nC/2, nC/2 + 1);
-subMatrix3 = zeros(nC/2, nC/2 + 1);
-for i = 1:(nC/2)
-    for j = 1:(nC/2 + 1)
-        subMatrix1(i,j) = originalCSIMatrix(1, i + j - 1);
-        subMatrix2(i,j) = originalCSIMatrix(2, i + j - 1);
-        subMatrix3(i,j) = originalCSIMatrix(3, i + j - 1);
+assert(nC >= 2*nChannelSensors, 'nChannelSensors should not exceeds half of the number of actual channels!');
+assert(nR > nAntennaSensors, 'nAntennaSensors should not be strictly smaller than the number of actual antennas!');
+bufferMatrix = zeros(nChannelSensors, nC-nChannelSensors+1, nR);
+for k = 1:nR
+    for l = 1:nChannelSensors
+        bufferMatrix(l, :, k) = originalCSIMatrix(k, l:l+nC-nChannelSensors);
     end
 end
-smoothedCSIMatrix = [subMatrix1, subMatrix2; subMatrix2, subMatrix3];
+smoothedCSIMatrix = [];
+for k = 1:nAntennaSensors
+    rowPseudoVector = reshape(bufferMatrix(:,:,k:(k+nR-nAntennaSensors)), nChannelSensors, (nC-nChannelSensors+1)*(nR-nAntennaSensors+1)); 
+    smoothedCSIMatrix = [smoothedCSIMatrix; rowPseudoVector];
+end

@@ -20,7 +20,7 @@
 %                csi_matrix: [3x2x56 double]
 %                   ntxused: 1
 %            pseudoSpectrum: [MUSIC_SPECTRUM_LENGTHx1 double]
-%                      freq: [MUSIC_SPECTRUM_LENGTHx1 double]
+%                      angles: [MUSIC_SPECTRUM_LENGTHx1 double]
 %                maximaLocs: [2x1 double]
 
 
@@ -90,7 +90,7 @@ end
 % fieldNames = fieldnames(sampleData);
 
 LOG_DATA = {};
-matrixForPMUSIC = [];
+matrixForMUSIC = [];
 LOG_DATA_BUFF = {};
 
 if KalmanFlag
@@ -111,7 +111,6 @@ if KalmanFlag
 elseif ExponentialMovingAverageFlag
     %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
     prePseudoSpectrum = zeros(MUSIC_SPECTRUM_LENGTH, 1);
-    prePseudoSpectrum1 = zeros(MUSIC_SPECTRUM_LENGTH, 1);
     %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
 end
 
@@ -140,38 +139,36 @@ while true
   end
 
   howManyTxToUse = NUM_OF_TX_ANTENNAS_TO_USE; % you can set this variable to limit the number of data from different tx antennas
-  vectorForPMUSIC = [];
+  vectorForMUSIC = [];
   for i = 1:nr
-    for j = 1:howManyTxToUse
+    for j = 1:howManyTxToUse % Here the logic is currently wrong.
       csiChannel = reshape(csiMatrix(i, j, :), [1, num_tones]);
       if computeMUSICUsingPDP
-          elementForPMUSIC = csi2pdp(csiChannel);
+          elementForMUSIC = csi2pdp(csiChannel);
       elseif computeMUSICUsingCSI | computeMUSICUsingSpotFi
-          elementForPMUSIC = csiChannel;
+          elementForMUSIC = csiChannel;
       elseif computeMUSICUsingOneChannelCSI
-          elementForPMUSIC = csiChannel(1);
+          elementForMUSIC = csiChannel(1);
       end
     end
-    vectorForPMUSIC = [vectorForPMUSIC; elementForPMUSIC];
+    vectorForMUSIC = [vectorForMUSIC; elementForMUSIC];
   end
-  [nR, nC] = size(matrixForPMUSIC);
+  [nR, nC] = size(matrixForMUSIC);
   if (~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE)
-      matrixForPMUSIC = [];
+      matrixForMUSIC = [];
   end
-  matrixForPMUSIC = [matrixForPMUSIC, vectorForPMUSIC];
-  if computeMUSICUsingSpotFi
-      matrixForPMUSIC = SpotFiCSISmooth(matrixForPMUSIC);
-  end
-  [nR, nC] = size(matrixForPMUSIC);
+  matrixForMUSIC = [matrixForMUSIC, vectorForMUSIC];
+  [nR, nC] = size(matrixForMUSIC);
 
   err = 0;
 
   % -------- compute MUSIC
-  if length(matrixForPMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
-    %[pseudoSpectrum, freq] = pmusic(matrixForPMUSIC', 1);
-    %[pseudoSpectrum1, freq1] = pmusic(matrixForPMUSIC', 1);
-    [pseudoSpectrum, freq] = computeMUSICSpectrum(matrixForPMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE);
-    %[pseudoSpectrum1, freq1] = computeMUSICSpectrum(matrixForPMUSIC, 2, SEPARATION_DISTANCE);
+  if length(matrixForMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
+    if computeMUSICUsingSpotFi
+        [pseudoSpectrum, angles, eigenVector, ToFs] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_TOFS);
+    else
+        [pseudoSpectrum, angles, eigenVector] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_TOFS);
+    end
 
     if KalmanFlag
         %%%%%%%%%%%%%%%%%% Kalman Filtering %%%%%%%%%%%%%%%%%%%
@@ -189,18 +186,20 @@ while true
         %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
         pseudoSpectrum = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum + weightForExponentialMovingAverage .* pseudoSpectrum;
         prePseudoSpectrum = pseudoSpectrum;
-
-        %pseudoSpectrum1 = (1 - weightForExponentialMovingAverage) .* prePseudoSpectrum1 + weightForExponentialMovingAverage .* pseudoSpectrum1;
-        prePseudoSpectrum1 = pseudoSpectrum1;
         %%%%%%%%%%%%% Exponential Moving Average %%%%%%%%%%%%%%
     end
 
     dataAoA.data = pseudoSpectrum;
     dataAoA.range = [0 180];
-    dataAoA.length = length(pseudoSpectrum);
+    if computeMUSICUsingSpotFi
+        dataAoA.ToFRange = [ToFs(1), ToFs(length(ToFs))];
+        dataAoA.dataSize = size(dataAoA.data);
+    else
+        dataAoA.length = length(pseudoSpectrum);
+    end
 
     if showFigure
-        [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE);
+        [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE, computeMUSICUsingSpotFi);
         drawnow;
         localMaximasLocs = plotData.localMaximasLocations;
     else
@@ -216,13 +215,13 @@ while true
 
   if length(LOG_PARA)
     csiData.ntxused = howManyTxToUse;
+    csiData.eigenVector = eigenVector;
     if computeMUSICUsingOneChannelCSI
         LOG_DATA_BUFF = [LOG_DATA_BUFF, csiData];
         if nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE
             for i = 1:length(LOG_DATA_BUFF)
                 LOG_DATA_BUFF{i}.pseudoSpectrum = pseudoSpectrum;
-                %LOG_DATA_BUFF{i}.pseudoSpectrum1 = pseudoSpectrum1;
-                LOG_DATA_BUFF{i}.freq = freq;
+                LOG_DATA_BUFF{i}.angles = angles;
                 LOG_DATA_BUFF{i}.maximaLocs = localMaximasLocs;
             end
             LOG_DATA = [LOG_DATA, LOG_DATA_BUFF];
@@ -230,8 +229,7 @@ while true
         end
     else
         csiData.pseudoSpectrum = pseudoSpectrum;
-        %csiData.pseudoSpectrum1 = pseudoSpectrum1;
-        csiData.freq = freq;
+        csiData.angles = angles;
         csiData.maximaLocs = localMaximasLocs;
         LOG_DATA = [LOG_DATA, csiData];
     end

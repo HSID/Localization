@@ -1,4 +1,4 @@
-function [plotData err] = plotAoA(data, plotRadius, radiusScale)
+function [plotData err] = plotAoA(data, plotRadius, radiusScale, SpotFiFlag)
 %function plotData = plotAoA(data, plotRadius, radiusScale)
 %
 %INPUTS:
@@ -11,15 +11,23 @@ function [plotData err] = plotAoA(data, plotRadius, radiusScale)
 %
 %OUTPUTS:
 %	err           - the signal indicating the successness of the plot
-plotData = convertCoordinates(data, plotRadius, radiusScale);
-formattedPlot(plotData.x, plotData.y, plotRadius);
-localMaximas.x = plotData.x(plotData.localMaximasLocations);
-localMaximas.y = plotData.y(plotData.localMaximasLocations);
-plotPolarLine(localMaximas.x, localMaximas.y);
-axis equal;
-axis([-plotRadius, plotRadius, -plotRadius, plotRadius]);
-err = 0;
-hold off;
+if ~SpotFiFlag
+    plotData = convertCoordinates(data, plotRadius, radiusScale);
+    formattedPlot(plotData.x, plotData.y, plotRadius);
+    localMaximas.x = plotData.x(plotData.localMaximasLocations);
+    localMaximas.y = plotData.y(plotData.localMaximasLocations);
+    plotPolarLine(localMaximas.x, localMaximas.y);
+    axis equal;
+    axis([-plotRadius, plotRadius, -plotRadius, plotRadius]);
+    err = 0;
+    hold off;
+else
+    plotData.localMaximasLocations = findLocalMaximaIn2DMatrix(data.data);
+    colormap('hot');
+    imagesc(data.data);
+    colorbar;
+    err = 0;
+end
 
 function err = plotPolarLine(xData, yData)
 for i = 1:length(xData)

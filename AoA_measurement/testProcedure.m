@@ -1,9 +1,31 @@
 % This is a script for testing.
 
+clear;
 % Load the configuration file.
 configFile;
 
 % Basic assertions for checking parameter type errors in configuration file.
+
+% Test the computeMUSICSpectrum function
+%%%%% TO DO
+
+% Test the SpotFiSteeringMatrixModify function
+%testOriginalCSIMatrix = zeros(3, 56);
+%for i = 1:3;
+%    testOriginalCSIMatrix(i, :) = i;
+%end
+%testModifedMatrix = SpotFiSteeringMatrixModify(testOriginalCSIMatrix, 3);
+%return;
+
+% Test the SpotFiCSISmooth function
+%testOriginalCSIMatrix = zeros(3, 56);
+%for i = 1:3
+%    for j = 1:56
+%        testOriginalCSIMatrix(i,j) = i * 100 + j;
+%    end
+%end
+%testSmoothedMatrix = SpotFiCSISmooth(testOriginalCSIMatrix);
+%return;
 
 % Test for the settings in the configuration file.
 fprintf('Testing parameters from the configuration file...\n');
@@ -12,7 +34,7 @@ measureAoA;
 % Test for inverting the bool parameters.
 SHOW_FIGURE = ~SHOW_FIGURE;
 
-READ_DATA_FROM_FILE = ~READ_DATA_FROM_FILE;
+%READ_DATA_FROM_FILE = ~READ_DATA_FROM_FILE;
 
 PERIODICAL_SOUND_SIGNAL = ~PERIODICAL_SOUND_SIGNAL;
 
@@ -38,9 +60,9 @@ COMPUTE_MUSIC_USING = 'OneChannelCSI';
 fprintf('Testing one-channel-CSI-based MUSIC...\n');
 measureAoA;
 
-COMPUTE_MUSIC_USING = 'SpotFi';
-fprintf('Testing SpotFi-based MUSIC...\n');
-measureAoA;
+%COMPUTE_MUSIC_USING = 'SpotFi';
+%fprintf('Testing SpotFi-based MUSIC...\n');
+%measureAoA;
 
 configFile;
 COMPUTE_MUSIC_USING = 'OneChannelCSI';
