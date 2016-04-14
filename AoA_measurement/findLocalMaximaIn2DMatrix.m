@@ -10,5 +10,5 @@ for j = 1:nR
         if k > 1 flag(2, 1) = originalMatrix(j, k - 1) < element; end
         if k < nC flag(2, 3) = originalMatrix(j, k + 1) < element; end
         if all(all(flag)) locationMatrix = [locationMatrix, [j; k]]; end
-        end
     end
+end

@@ -1,6 +1,18 @@
 % This is a script for testing.
-
 clear;
+clc;
+
+% Parameters initialization
+KalmanFlag = false;
+ExponentialMovingAverageFlag = false;
+inputFlag = false;
+computeMUSICUsingPDP = false;
+computeMUSICUsingCSI = false;
+computeMUSICUsingOneChannelCSI = false;
+computeMUSICUsingSpotFi = false;
+periodicalSoundSignal = false;
+showFigure = true;
+
 % Load the configuration file.
 configFile;
 

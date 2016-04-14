@@ -88,7 +88,7 @@ sampleToFs = (0:2:50);
 freqComponentWeighted = false;
 X = generateSignalMatrix(sampleFreq, separateFreq, doas, tofs, powers, antennas, channels, separateDist, freqComponentWeighted);
 [musicSpectrum, angles, TOFs] = computeMUSICSpectrum(X, length(doas), separateDist, true, separateFreq, sampleFreq, sampleToFs);
-colormap('hot');
+colormap('jet');
 imagesc(musicSpectrum);
 tEnd = cputime;
 tEnd - tStart

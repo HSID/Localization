@@ -24,35 +24,19 @@
 %                maximaLocs: [2x1 double]
 
 
-KalmanFlag = false;
-ExponentialMovingAverageFlag = false;
-inputFlag = false;
-computeMUSICUsingPDP = false;
-computeMUSICUsingCSI = false;
-computeMUSICUsingOneChannelCSI = false;
-computeMUSICUsingSpotFi = false;
-periodicalSoundSignal = false;
-showFigure = true;
-%for i = 1:length(varargin)
-%    if ischar(varargin{i}) 
-%        if strcmp(varargin{i}, 'KalmanFilter');
-%            KalmanFlag = true;
-%        else strcmp(varargin{i}, 'ExponentialMovingAverage');
-%            ExponentialMovingAverageFlag = true;
-%        end
-%    elseif isfloat(varargin{i}) 
-%        if ExponentialMovingAverageFlag
-%            weightForExponentialMovingAverage = varargin{i};
-%        end
-%    else
-%        inputIndex = 1;
-%        inputFlag = true;
-%        input = varargin{i};
-%    end
-%end
+% Parameters initialization
+%KalmanFlag = false;
+%ExponentialMovingAverageFlag = false;
+%inputFlag = false;
+%computeMUSICUsingPDP = false;
+%computeMUSICUsingCSI = false;
+%computeMUSICUsingOneChannelCSI = false;
+%computeMUSICUsingSpotFi = false;
+%periodicalSoundSignal = false;
+%showFigure = true;
 
 % read config file
-configFile;
+%configFile;
 
 % load the sound track
 load handel.mat
@@ -83,7 +67,7 @@ periodicalSoundSignal = PERIODICAL_SOUND_SIGNAL;
 showFigure = SHOW_FIGURE;
 
 if showFigure
-    figure;
+    plotFigure = figure;
 end
 
 % sampleData = getCSIData;
@@ -165,9 +149,9 @@ while true
   % -------- compute MUSIC
   if length(matrixForMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
     if computeMUSICUsingSpotFi
-        [pseudoSpectrum, angles, eigenVector, ToFs] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_TOFS);
+        [pseudoSpectrum, angles, eigenVector, numberOfPathes, ToFs] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_ANGLES, SAMPLES_OF_TOFS);
     else
-        [pseudoSpectrum, angles, eigenVector] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_TOFS);
+        [pseudoSpectrum, angles, eigenVector, numberOfPathes] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_ANGLES, SAMPLES_OF_TOFS);
     end
 
     if KalmanFlag
@@ -220,6 +204,7 @@ while true
   if length(LOG_PARA)
     csiData.ntxused = howManyTxToUse;
     csiData.eigenVector = eigenVector;
+    csiData.numberOfPathes = numberOfPathes;
     if computeMUSICUsingOneChannelCSI
         LOG_DATA_BUFF = [LOG_DATA_BUFF, csiData];
         if nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE
@@ -232,6 +217,7 @@ while true
             LOG_DATA_BUFF = {};
         end
     else
+        if computeMUSICUsingSpotFi csiData.ToFs = ToFs; end
         csiData.pseudoSpectrum = pseudoSpectrum;
         csiData.angles = angles;
         csiData.maximaLocs = localMaximasLocs;
@@ -245,3 +231,5 @@ while true
     end
   end
 end
+
+if showFigure close(plotFigure); end

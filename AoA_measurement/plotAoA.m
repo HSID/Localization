@@ -23,7 +23,7 @@ if ~SpotFiFlag
     hold off;
 else
     plotData.localMaximasLocations = findLocalMaximaIn2DMatrix(data.data);
-    colormap('hot');
+    colormap('jet');
     imagesc(data.data);
     colorbar;
     err = 0;

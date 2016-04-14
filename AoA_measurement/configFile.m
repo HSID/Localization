@@ -15,8 +15,11 @@ INDICES_OF_REC_ANTENNAS_TO_USE = [1, 2, 3];
 % INDICES_OF_TX_ANTENNAS_TO_USE is the index array of transmitting antennas to be used.
 INDICES_OF_TX_ANTENNAS_TO_USE = [1, 2, 3];
 
+% SAMPLES_OF_ANGLES in degree
+SAMPLES_OF_ANGLES = (-90:5:90);
+
 % MUSIC_SPECTRUM_LENGTH
-MUSIC_SPECTRUM_LENGTH = length(-90:0.1:90);
+MUSIC_SPECTRUM_LENGTH = length(SAMPLES_OF_ANGLES);
 
 % SMOOTH_METHOD 'ExponentialMovingAverage' 'KalmanFilter'
 SMOOTH_METHOD = 'None';
