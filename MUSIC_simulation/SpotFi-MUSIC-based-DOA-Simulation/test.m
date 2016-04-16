@@ -76,18 +76,21 @@
 
 % Test the computeMUSICSpectrum function for SpotFi MUSIC mode. (Already checked)
 tStart = cputime;
-doas = [-30, 0, 45];
-tofs = [21, 11, 33];
-powers = [1, 1, 1];
+doas = [-30, 0, 30];
+tofs = [21, 15, 31];
+powers = [1, 0.1, 0.3];
 antennas = 3;
-channels = 10;
+channels = 56;
 separateDist = 0.5;
 separateFreq = 2;
 sampleFreq = 200;
-sampleToFs = (0:2:50);
+whiteNoisedBw = 0;
+SpotFiFlag = true;
+sampleAngles = (-90:0.1:90);
+sampleToFs = (0:0.4:50);
 freqComponentWeighted = false;
-X = generateSignalMatrix(sampleFreq, separateFreq, doas, tofs, powers, antennas, channels, separateDist, freqComponentWeighted);
-[musicSpectrum, angles, TOFs] = computeMUSICSpectrum(X, length(doas), separateDist, true, separateFreq, sampleFreq, sampleToFs);
+X = generateSignalMatrix(sampleFreq, separateFreq, doas, tofs, powers, antennas, channels, separateDist, freqComponentWeighted, whiteNoisedBw);
+[musicSpectrum, angles, eigenValues, TOFs] = computeMUSICSpectrum(X, 3, separateDist, SpotFiFlag, separateFreq, sampleFreq, sampleAngles, sampleToFs);
 colormap('jet');
 imagesc(musicSpectrum);
 tEnd = cputime;

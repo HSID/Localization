@@ -1,4 +1,4 @@
-function X = generateSignalMatrix(sampleFreq, freqDist, doas, tofs, powers, antennas, channels, separateDist, freqComponentWeighted)
+function X = generateSignalMatrix(sampleFreq, freqDist, doas, tofs, powers, antennas, channels, separateDist, freqComponentWeighted, whiteNoisedBw)
 % Generate a CSI matrix for MUSIC simulation
 % INPUT:
 %   sampleFreq   -- sampling frequency
@@ -30,7 +30,8 @@ end
 signal = sum(diag(componentWeight)*exp(i*2*pi*freqs'*t), 1);
 signalMatrixWithToFs = zeros(path_n, sample_n);
 for k = 1:path_n
-    signalMatrixWithToFs(k, :) = signal((tofs(k)+1):(tofs(k)+sample_n));
+    noiseSignal = wgn(1, sample_n, whiteNoisedBw);
+    signalMatrixWithToFs(k, :) = signal((tofs(k)+1):(tofs(k)+sample_n)) + noiseSignal;
 end
 A=exp(i*2*pi*separateDist*(0:antennas-1)'*sin([doas(:).']*pi/180));
 signalMatrix = A*diag(sqrt(powers))*signalMatrixWithToFs;
