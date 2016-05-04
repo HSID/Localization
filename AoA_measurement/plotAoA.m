@@ -1,4 +1,4 @@
-function [plotData err] = plotAoA(data, plotRadius, radiusScale, SpotFiFlag)
+function [plotData err] = plotAoA(data, plotRadius, radiusScale, SpotFiFlag, plotLocalMaximaFLag)
 %function plotData = plotAoA(data, plotRadius, radiusScale)
 %
 %INPUTS:
@@ -23,9 +23,13 @@ if ~SpotFiFlag
     hold off;
 else
     plotData.localMaximasLocations = findLocalMaximaIn2DMatrix(data.data);
-    colormap('jet');
-    imagesc(data.data);
-    colorbar;
+    if plotLocalMaximaFlag
+        plot(plotData.localMaximasLocations(:, 2), plotData.localMaximasLocations(:, 1), 'o', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+    else
+        colormap('jet');
+        imagesc(data.data);
+        colorbar;
+    end
     err = 0;
 end
 

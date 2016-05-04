@@ -13,6 +13,7 @@ computeMUSICUsingOneChannelCSI = false;
 computeMUSICUsingSpotFi = false;
 periodicalSoundSignal = false;
 showFigure = true;
+plotLocalMaximaSpotFiFlag = false;
 
 % read the config file for basic configuring
 configFile;

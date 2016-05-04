@@ -185,7 +185,7 @@ while true
     end
 
     if showFigure
-        [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE, computeMUSICUsingSpotFi);
+        [plotData err] = plotAoA(dataAoA, PLOT_AOA_RADIUS, PLOT_AOA_RADIUS_SCALE, computeMUSICUsingSpotFi, plotLocalMaximaSpotFiFlag);
         drawnow;
         localMaximasLocs = plotData.localMaximasLocations;
     else
