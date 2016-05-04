@@ -176,7 +176,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             const char *fieldNames[] = {"channel", "chanBW", "rate",
                                         "nr", "nc", "num_tones",
                                         "rssi", "rssi_0", "rssi_1",
-                                        "rssi_2", "payload_len", "csi_matrix"};
+                                        "rssi_2", "payload_len", "csi"};
 #define NUMBER_OF_FIELDS (sizeof(fieldNames)/sizeof(*fieldNames))
             plhs[0] = mxCreateStructMatrix(1, 1, NUMBER_OF_FIELDS, fieldNames);
 

@@ -111,7 +111,7 @@ while true
   end
 
   % --------- construct matrix for MUSIC
-  csiMatrix = csiData.csi_matrix;
+  csiMatrix = csiData.csi;
   nr = csiData.nr;
   nc = csiData.nc;
   num_tones = csiData.num_tones;
@@ -148,7 +148,9 @@ while true
 
   % -------- compute MUSIC
   if length(matrixForMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
+    matrixForMUSIC = antennaNormalize(matrixForMUSIC);
     if computeMUSICUsingSpotFi
+        %matrixForMUSIC = sanitizeToFs(matrixForMUSIC);
         [pseudoSpectrum, angles, eigenVector, numberOfPathes, ToFs] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_ANGLES, SAMPLES_OF_TOFS);
     else
         [pseudoSpectrum, angles, eigenVector, numberOfPathes] = computeMUSICSpectrum(matrixForMUSIC, NUMBER_OF_SIGNAL_PATHES, SEPARATION_DISTANCE, computeMUSICUsingSpotFi, SEPARATION_FREQUENCE, ONE_OVER_TIME_RESOLUTION, SAMPLES_OF_ANGLES, SAMPLES_OF_TOFS);
@@ -217,10 +219,16 @@ while true
             LOG_DATA_BUFF = {};
         end
     else
-        if computeMUSICUsingSpotFi csiData.ToFs = ToFs; end
-        csiData.pseudoSpectrum = pseudoSpectrum;
-        csiData.angles = angles;
-        csiData.maximaLocs = localMaximasLocs;
+        if computeMUSICUsingSpotFi 
+            csiData.ToFs = ToFs; 
+            csiData.pseudoSpectrumSpotFi = pseudoSpectrum;
+            csiData.maximaLocsSpotFi = localMaximasLocs;
+            csiData.anglesSpotFi = angles;
+        else
+            csiData.pseudoSpectrumClassic = pseudoSpectrum;
+            csiData.maximaLocsClassic = localMaximasLocs;
+            csiData.anglesClassic = angles;
+        end
         LOG_DATA = [LOG_DATA, csiData];
     end
   end
