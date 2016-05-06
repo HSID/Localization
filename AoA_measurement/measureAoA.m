@@ -148,6 +148,7 @@ while true
 
   % -------- compute MUSIC
   if length(matrixForMUSIC) & ((~computeMUSICUsingOneChannelCSI) | (nC == ONE_CHANNEL_MUSIC_WINDOW_SIZE))
+    if ~checkMatrixForMUSICCorrectness(matrixForMUSIC) continue; end
     matrixForMUSIC = antennaNormalize(matrixForMUSIC);
     if computeMUSICUsingSpotFi
         %matrixForMUSIC = sanitizeToFs(matrixForMUSIC);

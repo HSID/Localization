@@ -63,4 +63,4 @@ if (nargout == 3) varargout{1} = D; end
 if (nargout == 4) varargout{1} = D; varargout{2} = r; end
 if (nargout == 5) varargout{1} = D; varargout{2} = r; varargout{3} = ToFs; end
 
-musicSpectrum = abs(musicSpectrum);
+musicSpectrum = db(abs(musicSpectrum));
